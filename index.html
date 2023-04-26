@@ -1,0 +1,46 @@
+<script src="https://mozilla.github.io/pdf.js/build/pdf.js"></script>
+
+<h1>PDF.js Demo with multiple page viewer</h1>
+
+
+<canvas id='_page' style="display: none;"></canvas>
+<div id="renderer" style="display: inline-grid;align-items: center;margin: 10px;border: 2px black solid;box-shadow: 0px 0px 7px 0px black;border-radius: 10px;overflow: auto;"></div>
+
+
+<script>// If absolute URL from the remote server is provided, configure the CORS
+    // header on that server.
+    var url = 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf';
+    var pdfjsLib = window['pdfjs-dist/build/pdf'];
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://mozilla.github.io/pdf.js/build/pdf.worker.js';
+    
+    var pdfDoc = null,
+        scale = 1.5,
+        _divrender=document.getElementById('renderer'),
+        _canvas=document.getElementById("_page");
+
+    function renderPage(_page) {
+            pdfDoc.getPage(_page).then(function(page) {
+                _canvas.height = page.getViewport({scale: scale}).height;
+                _canvas.width = page.getViewport({scale: scale}).width;
+                var renderTask = page.render({
+                    canvasContext: _canvas.getContext('2d'),
+                    viewport: page.getViewport({scale: scale})
+                });
+                renderTask.promise.then(function() {
+                    const image = _canvas.toDataURL('image/png').replace("image/png", "image/octet-stream");;
+                    _divrender.innerHTML+="<img src='"+image+"'/>";
+                    setTimeout(() => {
+                        if(_page<pdfDoc.numPages){renderPage(_page+1);}
+                    }, 500);
+                });
+            });
+
+          }
+    /**
+     * Asynchronously downloads PDF.
+     */
+    pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
+      pdfDoc = pdfDoc_;
+      renderPage(1);
+    });
+    </script>
